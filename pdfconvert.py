@@ -9,7 +9,7 @@ def extract_first_page_text(pdf_path):
     return text
 
 # Ruta al archivo PDF
-pdf_path = "archivos/homicidios_01112024_v2.pdf"
+pdf_path = "homicidios_01112024_v2.pdf"
 texto_primera_pagina = extract_first_page_text(pdf_path)
 
 # Imprime el texto extraído
