@@ -1,7 +1,15 @@
 import fitz  # PyMuPDF
+import os
 
-# Ruta al archivo PDF
-pdf_path = 'homicidios_03112024_v2.pdf'
+# Ruta relativa al archivo PDF
+pdf_path = '../archivos/homicidios_01112024_v2.pdf'
+
+# Extraer el nombre base del archivo sin la extensión
+image_name = os.path.splitext(os.path.basename(pdf_path))[0]
+# Ruta de la carpeta de salida
+output_folder = '../imagenes'  # Ruta relativa para subir a 'Tablero-interactivo' y luego a 'imagenes'
+# Ruta completa para guardar la imagen
+image_path = os.path.join(output_folder, f"{image_name}.png")
 
 # Abrir el archivo PDF
 pdf_document = fitz.open(pdf_path)
@@ -10,12 +18,14 @@ pdf_document = fitz.open(pdf_path)
 if pdf_document.page_count > 0:
     # Cargar solo la primera página (índice 0)
     page = pdf_document.load_page(0)
-    
+
     # Convertir la página a imagen
     image = page.get_pixmap(dpi=300)  # Exportar con una resolución de 300 DPI
-    
-    # Guardar la imagen
-    image_path = 'pagina_1.png'
+
+    # Crear la carpeta 'imagenes' si no existe
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Guardar la imagen en la carpeta especificada
     image.save(image_path)
     print(f"La primera página se ha guardado como {image_path}")
 else:

@@ -1,7 +1,9 @@
 from cnocr import CnOcr
 
-img_fp = 'homicidios.png'
-ocr = CnOcr()  # Use default values for all parameters
+img_fp = '../imagenes/homicidios_01112024_v2.png'
+ocr = CnOcr()  # Usa valores predeterminados
 out = ocr.ocr(img_fp)
 
-print(out)
+# Filtramos solo el texto y lo mostramos en una lista más legible
+for item in out:
+    print(item['text'])
