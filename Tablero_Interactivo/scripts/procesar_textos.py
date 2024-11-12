@@ -30,10 +30,15 @@ def procesar_textos():
                     # Buscar la entidad en la base de datos, o crearla si no existe
                     entidad, created = Entidad.objects.get_or_create(nombre=nombre_entidad)
 
-                    # Guardar los datos de homicidios en la base de datos
-                    Homicidio.objects.create(
-                        entidad=entidad,
-                        fecha=fecha,
-                        total=homicidios  # Almacena el total de homicidios en el campo 'total'
-                    )
+                    # Verificar si ya existe un registro para esa entidad y fecha
+                    if not Homicidio.objects.filter(entidad=entidad, fecha=fecha).exists():
+                        # Guardar los datos de homicidios en la base de datos si no existe
+                        Homicidio.objects.create(
+                            entidad=entidad,
+                            fecha=fecha,
+                            total=homicidios  # Almacena el total de homicidios en el campo 'total'
+                        )
+                        print(f"Registro de homicidios para {nombre_entidad} en {fecha} guardado con éxito.")
+                    else:
+                        print(f"Registro para {nombre_entidad} en {fecha} ya existe. No se creó un duplicado.")
             print(f"Archivo {filename} procesado con éxito.")
