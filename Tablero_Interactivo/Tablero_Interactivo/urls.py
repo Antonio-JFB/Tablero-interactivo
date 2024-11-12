@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from homicidios.views import dashboard  # Asegúrate de importar la vista del dashboard
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('homicidios.urls')),  # Incluye las URLs de la app homicidios
+    path('', dashboard, name='dashboard'),  # Página principal del dashboard
+    path('homicidios/', include('homicidios.urls')),
 ]
