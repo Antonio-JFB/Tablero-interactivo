@@ -1,0 +1,16 @@
+<!-- homicidios/templates/homicidios/mostrar_homicidios.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Homicidios</title>
+</head>
+<body>
+    <h1>Lista de Homicidios</h1>
+    <ul>
+    {% for homicidio in homicidios %}
+        <li>{{ homicidio.entidad.nombre }} - {{ homicidio.fecha }} - {{ homicidio.total }}</li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

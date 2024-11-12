@@ -12,13 +12,11 @@ class Fuente(models.Model):
     nombre = models.CharField(max_length=100)
 
 class Homicidio(models.Model):
-    municipio = models.ForeignKey(Municipio, on_delete=models.CASCADE)
     entidad = models.ForeignKey(Entidad, on_delete=models.CASCADE)
     fecha = models.DateField()
-    hombres = models.IntegerField()
-    mujeres = models.IntegerField()
-    no_identificado = models.IntegerField()
-    fuente = models.ForeignKey(Fuente, on_delete=models.CASCADE)
+    total = models.IntegerField()  # Campo para almacenar el total de homicidios
+    fuente = models.ForeignKey(Fuente, on_delete=models.CASCADE, null=True, blank=True)
+
 
 class EstadisticaDiaria(models.Model):
     entidad = models.ForeignKey(Entidad, on_delete=models.CASCADE)
