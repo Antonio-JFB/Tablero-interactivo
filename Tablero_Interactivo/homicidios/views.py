@@ -8,8 +8,10 @@ from .models import EstadisticaDiaria, Entidad
 from plotly.utils import PlotlyJSONEncoder  # Importación correcta
 from .models import Homicidio, Entidad
 
-
 def dashboard(request):
+    # Obtener el año seleccionado del parámetro de consulta
+    year = request.GET.get('year', None)
+
     # Lista de nombres de estados válidos
     estados_validos = [
         "Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua",
@@ -19,14 +21,12 @@ def dashboard(request):
         "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"
     ]
 
-    # Obtener los homicidios sumados por entidad solo para entidades que son estados válidos
-    homicidios_data = (
-        Homicidio.objects
-        .filter(entidad__nombre__in=estados_validos)
-        .values('entidad__nombre')
-        .annotate(total_homicidios=Sum('total'))
-        .all()
-    )
+    # Filtrar homicidios por año si está seleccionado
+    homicidios_data = Homicidio.objects.filter(entidad__nombre__in=estados_validos)
+    if year:
+        homicidios_data = homicidios_data.filter(fecha__year=year)
+
+    homicidios_data = homicidios_data.values('entidad__nombre').annotate(total_homicidios=Sum('total')).all()
 
     # Crear un diccionario de homicidios por entidad
     homicidios_dict = {item['entidad__nombre']: item['total_homicidios'] for item in homicidios_data}
@@ -69,22 +69,20 @@ def dashboard(request):
 
     # Configurar el gráfico
     fig = go.Figure()
-
-    # Ajustar factor de escala para los homicidios
-    escala_tamano = 0.1  # Puedes ajustar este valor para cambiar la proporción del tamaño
-    tamano_max = 50     # Tamaño máximo de círculo, opcional
+    escala_tamano = 0.1
+    tamano_max = 50
 
     # Añadir los datos al gráfico
     for entidad, homicidios in homicidios_dict.items():
-        lat, lon = coordenadas_estados.get(entidad, (0, 0))  # Coordenadas por estado
-        tamano = min(10 + homicidios * escala_tamano, tamano_max)  # Tamaño ajustado del marcador
+        lat, lon = coordenadas_estados.get(entidad, (0, 0))
+        tamano = min(10 + homicidios * escala_tamano, tamano_max)
 
         fig.add_trace(go.Scattermapbox(
             lat=[lat],
             lon=[lon],
             mode='markers',
             marker=go.scattermapbox.Marker(
-                size=tamano,  # Tamaño ajustado
+                size=tamano,
                 color='red'
             ),
             text=f"{entidad}: {homicidios} homicidios",
@@ -98,7 +96,7 @@ def dashboard(request):
         mapbox=dict(
             style='open-street-map',
             bearing=0,
-            center=dict(lat=23.6345, lon=-102.5528),  # Centro aproximado de México
+            center=dict(lat=23.6345, lon=-102.5528),
             pitch=0,
             zoom=5
         ),
@@ -108,8 +106,12 @@ def dashboard(request):
     # Convertir el gráfico a formato JSON
     graph_json = json.dumps(fig, cls=PlotlyJSONEncoder)
 
-    return render(request, 'homicidios/dashboard.html', {'graph_json': graph_json})
-
+    # Pasar el año seleccionado y el gráfico al contexto
+    return render(request, 'homicidios/dashboard.html', {
+        'graph_json': graph_json,
+        'selected_year': year,
+        'years': range(2019, 2025)  # Años de 2019 a 2024
+    })
 
 
 def mostrar_homicidios(request):

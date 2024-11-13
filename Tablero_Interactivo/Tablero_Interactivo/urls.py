@@ -20,6 +20,5 @@ from homicidios.views import dashboard  # Asegúrate de importar la vista del da
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', dashboard, name='dashboard'),  # Página principal del dashboard
-    path('homicidios/', include('homicidios.urls')),
+    path('', include('homicidios.urls')),  # Incluye todas las URLs de homicidios en la raíz
 ]

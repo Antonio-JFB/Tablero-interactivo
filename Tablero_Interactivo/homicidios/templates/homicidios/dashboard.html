@@ -4,59 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Homicidios</title>
-    <!-- Agregar estilos CSS para dar formato -->
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-        }
-        .dashboard-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .map-container {
-            width: 100%;
-            height: 600px; /* Ajusta el tamaño del mapa */
-            margin-top: 20px;
-        }
-        .description {
-            font-size: 1.2em;
-            margin-bottom: 20px;
-            color: #555;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 5px;
-            background-color: #333;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #555;
-        }
-    </style>
+    <!-- Estilos CSS omitidos para simplificar -->
 </head>
 <body>
     <div class="header">
@@ -68,10 +16,16 @@
                 Visualización interactiva de homicidios registrados en México. Los círculos rojos en el mapa representan la cantidad de homicidios en cada estado.
             </p>
 
-            <!-- Botones para posibles filtros o navegación -->
-            <a href="#" class="btn">Filtrar por año</a>
-            <a href="#" class="btn">Filtrar por mes</a>
-            <a href="#" class="btn">Ver detalles</a>
+            <!-- Formulario de selección de año -->
+            <form method="get" action="{% url 'homicidios:dashboard' %}">
+                <label for="year">Filtrar por año:</label>
+                <select name="year" id="year" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    {% for year in years %}
+                        <option value="{{ year }}" {% if selected_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </form>
 
             <!-- Contenedor para el gráfico del mapa -->
             <div id="map" class="map-container"></div>
