@@ -1,5 +1,5 @@
 import json
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 import os
 from django.db.models import Sum
@@ -7,10 +7,15 @@ import plotly.graph_objects as go
 from .models import EstadisticaDiaria, Entidad
 from plotly.utils import PlotlyJSONEncoder  # Importación correcta
 from .models import Homicidio, Entidad
+from django.db.models.functions import ExtractMonth,ExtractYear
+
+
 
 def dashboard(request):
-    # Obtener el año seleccionado del parámetro de consulta
-    year = request.GET.get('year', None)
+    # Obtener parámetros de filtro desde la solicitud GET
+    start_year = request.GET.get('start_year', None)
+    end_year = request.GET.get('end_year', None)
+    chart_type = request.GET.get('chart_type', 'porMes')  # Por defecto, 'porMes'
 
     # Lista de nombres de estados válidos
     estados_validos = [
@@ -21,12 +26,16 @@ def dashboard(request):
         "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"
     ]
 
-    # Filtrar homicidios por año si está seleccionado
+    # Filtrar homicidios por año si están seleccionados
     homicidios_data = Homicidio.objects.filter(entidad__nombre__in=estados_validos)
-    if year:
-        homicidios_data = homicidios_data.filter(fecha__year=year)
+    if start_year:
+        homicidios_data = homicidios_data.filter(fecha__year__gte=start_year)
+    if end_year:
+        homicidios_data = homicidios_data.filter(fecha__year__lte=end_year)
 
+    # Agregar lógica según el tipo de gráfica (si es necesario)
     homicidios_data = homicidios_data.values('entidad__nombre').annotate(total_homicidios=Sum('total')).all()
+
 
     # Crear un diccionario de homicidios por entidad
     homicidios_dict = {item['entidad__nombre']: item['total_homicidios'] for item in homicidios_data}
@@ -76,6 +85,7 @@ def dashboard(request):
     for entidad, homicidios in homicidios_dict.items():
         lat, lon = coordenadas_estados.get(entidad, (0, 0))
         tamano = min(10 + homicidios * escala_tamano, tamano_max)
+        url = f"/detalle_homicidios/{entidad}/"  # Construir la URL dinámica
 
         fig.add_trace(go.Scattermapbox(
             lat=[lat],
@@ -86,7 +96,8 @@ def dashboard(request):
                 color='red'
             ),
             text=f"{entidad}: {homicidios} homicidios",
-            name=entidad
+            name=entidad,
+            customdata = [url]  # Guardar la URL en customdata
         ))
 
     # Configurar el layout del mapa
@@ -106,10 +117,32 @@ def dashboard(request):
     # Convertir el gráfico a formato JSON
     graph_json = json.dumps(fig, cls=PlotlyJSONEncoder)
 
+    # Crear gráfico de barras
+    bar_fig = go.Figure(data=[
+        go.Bar(
+            x=list(homicidios_dict.keys()),
+            y=list(homicidios_dict.values()),
+            marker=dict(color='orange'),
+            text=[f"{estado}: {total}" for estado, total in homicidios_dict.items()],
+            textposition="auto",
+        )
+    ])
+    bar_fig.update_layout(
+        title="Total de Homicidios por Entidad",
+        xaxis_title="Entidades",
+        yaxis_title="Total de Homicidios",
+        margin=dict(l=40, r=40, t=40, b=80),
+        height=400
+    )
+    bar_graph_json = json.dumps(bar_fig, cls=PlotlyJSONEncoder)
+
     # Pasar el año seleccionado y el gráfico al contexto
     return render(request, 'homicidios/dashboard.html', {
         'graph_json': graph_json,
-        'selected_year': year,
+        'bar_graph_json': bar_graph_json,
+        'selected_start_year': start_year,
+        'selected_end_year': end_year,
+        'chart_type': chart_type,
         'years': range(2019, 2025)  # Años de 2019 a 2024
     })
 
@@ -117,3 +150,66 @@ def dashboard(request):
 def mostrar_homicidios(request):
     homicidios = Homicidio.objects.all()
     return render(request, 'homicidios/mostrar_homicidios.html', {'homicidios': homicidios})
+
+def detalle_homicidios(request, entidad_nombre):
+    # Obtener entidad seleccionada
+    entidad = get_object_or_404(Entidad, nombre=entidad_nombre)
+
+    # Filtrar los homicidios de esta entidad
+    homicidios = Homicidio.objects.filter(entidad=entidad)
+
+    # Datos para el gráfico de líneas (homicidios por mes a lo largo del tiempo)
+    homicidios_por_mes = (
+        homicidios
+        .annotate(mes=ExtractMonth('fecha'), anio=ExtractYear('fecha'))
+        .values('mes', 'anio')
+        .annotate(total_homicidios=Sum('total'))
+        .order_by('anio', 'mes')
+    )
+
+    # Eje X y Y para el gráfico de líneas
+    x_data = [f"{dato['anio']}-{dato['mes']:02d}" for dato in homicidios_por_mes]
+    y_data = [dato['total_homicidios'] for dato in homicidios_por_mes]
+
+    line_fig = go.Figure(data=[
+        go.Scatter(x=x_data, y=y_data, mode='lines+markers', marker=dict(color='blue'))
+    ])
+    line_fig.update_layout(
+        title=f"Homicidios por Mes en {entidad.nombre}",
+        xaxis_title="Fecha",
+        yaxis_title="Total de Homicidios",
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+    line_graph_json = json.dumps(line_fig, cls=PlotlyJSONEncoder)
+
+    # Datos para el gráfico de barras (homicidios totales por año)
+    homicidios_por_anio = (
+        homicidios
+        .annotate(anio=ExtractYear('fecha'))
+        .values('anio')
+        .annotate(total_homicidios=Sum('total'))
+        .order_by('anio')
+    )
+
+    bar_x_data = [dato['anio'] for dato in homicidios_por_anio]
+    bar_y_data = [dato['total_homicidios'] for dato in homicidios_por_anio]
+
+    bar_fig = go.Figure(data=[
+        go.Bar(x=bar_x_data, y=bar_y_data, marker=dict(color='orange'))
+    ])
+    bar_fig.update_layout(
+        title=f"Homicidios Totales por Año en {entidad.nombre}",
+        xaxis_title="Año",
+        yaxis_title="Total de Homicidios",
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+    bar_graph_json = json.dumps(bar_fig, cls=PlotlyJSONEncoder)
+
+    # Renderizar la plantilla
+    return render(request, 'homicidios/detalle_homicidios.html', {
+        'homicidios': homicidios,
+        'entidad': entidad,
+        'line_graph_json': line_graph_json,
+        'bar_graph_json': bar_graph_json
+    })
+

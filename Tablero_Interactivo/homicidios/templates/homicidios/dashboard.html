@@ -98,6 +98,42 @@
         button:hover {
             background-color: #500e29;
         }
+
+        table {
+        width: 100%;
+        border-spacing: 10px; /* Espacio entre celdas */
+        }
+        table td {
+            vertical-align: top;
+        }
+        .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: #611232;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #500e29;
+}
+
+.btn-secondary {
+    background-color: #ccc;
+    color: black;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background-color: #aaa;
+}
+
     </style>
 </head>
 <body>
@@ -114,41 +150,44 @@
         <!-- Contenedor para los switches -->
         <div class="form-container">
             <div class="options-container">
-                <!-- Controles de selección -->
-                <div>
-                    <label for="start_year">Fecha Inicial</label>
-                    <select name="start_year" id="start_year">
-                        <option value="">Año</option>
-                        {% for year in years %}
-                            <option value="{{ year }}" {% if selected_start_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="end_year">Fecha Final</label>
-                    <select name="end_year" id="end_year">
-                        <option value="">Año</option>
-                        {% for year in years %}
-                            <option value="{{ year }}" {% if selected_end_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="state">Estado</label>
-                    <select name="state" id="state">
-                        <option value="Sonora" selected>Sonora</option>
-                        <!-- Agregar más estados aquí -->
-                    </select>
-                </div>
-                <div>
-                    <label for="chart_type">Tipo de Gráfica</label>
-                    <select name="chart_type" id="chart_type">
-                        <option value="porMes" selected>Por Mes</option>
-                        <!-- Agregar más tipos de gráficas aquí -->
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">OK</button>
+                <form method="GET" action="{% url 'homicidios:dashboard' %}">
+                    <table>
+                        <tr>
+                            <td>
+                                <label for="start_year">Fecha Inicial</label>
+                                <select name="start_year" id="start_year">
+                                    <option value="">Año</option>
+                                    {% for year in years %}
+                                        <option value="{{ year }}" {% if selected_start_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <label for="end_year">Fecha Final</label>
+                                <select name="end_year" id="end_year">
+                                    <option value="">Año</option>
+                                    {% for year in years %}
+                                        <option value="{{ year }}" {% if selected_end_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+
+                            <td>
+                                <button type="submit" class="btn btn-primary">OK</button>
+                            </td>
+                            <td>
+                            <!-- Botón para restablecer los filtros -->
+                            <a href="{% url 'homicidios:dashboard' %}" class="btn btn-secondary" style="text-decoration: none; padding: 10px 20px; border-radius: 5px; background-color: #ccc; color: black; text-align: center;">Restablecer</a>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
             </div>
+
+        <div id="chart-container" style="padding: 20px; height: 500px; overflow: hidden;">
+        <!-- Aquí se renderizará la gráfica -->
+        <div id="chart" style="width: 100%; height: 100%;"></div>
+        </div>
         </div>
 
         <!-- Contenedor para el mapa -->
@@ -184,6 +223,19 @@
             },
             margin: { t: 0, l: 0, r: 0, b: 0 },
         });
+        // Renderizar el gráfico de barras
+        var barGraphJSON = {{ bar_graph_json|safe }};
+        Plotly.newPlot('chart', barGraphJSON);
+        var mapElement = document.getElementById('map');
+        mapElement.on('plotly_click', function(data) {
+            if (data.points.length > 0) {
+                    // Obtener la URL desde customdata
+                    var url = data.points[0].customdata;
+                    if (url) {
+                        window.location.href = url; // Redirigir a la URL
+                    }
+                }
+            });
     </script>
 </body>
 </html>

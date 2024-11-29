@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Interactivo de Homicidios</title>
+    <style>
+        body {
+            background-color: #f5eddb;
+            font-family: "Montserrat";
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #611232;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .header-left img {
+            height: 50px;
+            margin-right: 15px;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .content {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .form-container {
+            background-color: white;
+            width: 100%;
+            height: auto;
+            box-sizing: border-box;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .chart-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <img src="../../../static/logo-mexico.png" alt="Gobierno de México">
+        </div>
+        <div class="header-right">
+            <h1>Tablero Interactivo de Homicidios Dolosos</h1>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="form-container">
+            <!-- Título de la entidad -->
+            <h1>Homicidios en {{ entidad.nombre }}</h1>
+
+            <!-- Contenedor para el gráfico de líneas -->
+            <div id="line_graph" class="chart-container" style="width: 100%; height: 400px;"></div>
+
+            <!-- Contenedor para el gráfico de barras -->
+            <div id="bar_graph" class="chart-container" style="width: 100%; height: 400px;"></div>
+        </div>
+    </div>
+
+    <!-- Incluir scripts de Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        // Gráfico de líneas
+        var lineGraph = {{ line_graph_json|safe }};
+        Plotly.newPlot('line_graph', lineGraph);
+
+        // Gráfico de barras
+        var barGraph = {{ bar_graph_json|safe }};
+        Plotly.newPlot('bar_graph', barGraph);
+    </script>
+</body>
+</html>
