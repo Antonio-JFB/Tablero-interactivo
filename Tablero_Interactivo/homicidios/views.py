@@ -122,7 +122,7 @@ def dashboard(request):
         go.Bar(
             x=list(homicidios_dict.keys()),
             y=list(homicidios_dict.values()),
-            marker=dict(color='orange'),
+            marker=dict(color='#611232'),
             text=[f"{estado}: {total}" for estado, total in homicidios_dict.items()],
             textposition="auto",
         )
@@ -155,8 +155,18 @@ def detalle_homicidios(request, entidad_nombre):
     # Obtener entidad seleccionada
     entidad = get_object_or_404(Entidad, nombre=entidad_nombre)
 
+    # Obtener año seleccionado del formulario
+    selected_year = request.GET.get('year')
+
     # Filtrar los homicidios de esta entidad
     homicidios = Homicidio.objects.filter(entidad=entidad)
+
+    # Si se seleccionó un año, filtrar los homicidios por ese año
+    if selected_year:
+        homicidios = homicidios.filter(fecha__year=selected_year)
+
+    # Obtener todos los años disponibles para el filtro
+    anios_disponibles = Homicidio.objects.annotate(anio=ExtractYear('fecha')).values_list('anio', flat=True).distinct()
 
     # Datos para el gráfico de líneas (homicidios por mes a lo largo del tiempo)
     homicidios_por_mes = (
@@ -210,6 +220,8 @@ def detalle_homicidios(request, entidad_nombre):
         'homicidios': homicidios,
         'entidad': entidad,
         'line_graph_json': line_graph_json,
-        'bar_graph_json': bar_graph_json
+        'bar_graph_json': bar_graph_json,
+        'anios_disponibles': sorted(anios_disponibles),
+        'selected_year': selected_year
     })
 
